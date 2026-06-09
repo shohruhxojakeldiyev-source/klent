@@ -1,0 +1,26 @@
+.clientPage{max-width:900px;margin:20px auto;padding:16px;font-family:Inter,Arial,Helvetica,sans-serif}
+.clientTop h1{margin:0 0 20px;color:#333;font-size:28px}
+.clientSection{margin:16px 0}
+.clientSection label{display:block;margin-bottom:8px;font-weight:600;color:#333}
+.clientSection select,input{width:100%;padding:12px;border:1px solid #ddd;border-radius:8px;font-size:16px;font-family:inherit}
+.clientSection select:focus,input:focus{outline:none;border-color:#0b5fff;box-shadow:0 0 0 3px rgba(11,95,255,0.1)}
+.clientSection.form{display:flex;gap:8px;flex-wrap:wrap}
+.clientSection.form input{flex:1;min-width:120px}
+.takeBtn{background:#0b5fff;color:#fff;padding:12px 16px;border-radius:8px;border:none;cursor:pointer;font-weight:600;font-size:16px}
+.takeBtn:hover:not(:disabled){background:#0a4bcf}
+.takeBtn:disabled{background:#ccc;cursor:not-allowed;opacity:0.6}
+.myCard{border:1px solid #e0e0e0;padding:16px;border-radius:12px;margin:16px 0;background:#fafafa;box-shadow:0 1px 3px rgba(0,0,0,0.05)}
+.myCard h3{margin:0 0 12px;color:#0b5fff;font-size:16px}
+.myCard p{margin:6px 0;color:#333}
+.myActions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.cancelBtn{background:#ff3b30;color:#fff;border:none;padding:10px 12px;border-radius:8px;cursor:pointer;font-weight:600;flex:1;min-width:100px}
+.cancelBtn:hover{background:#e63228}
+.queueList{margin-top:20px}
+.queueList h2{margin-bottom:12px;color:#333;font-size:18px}
+.queueList > p{color:#999;text-align:center;padding:20px}
+.queueItem{display:flex;align-items:center;padding:12px;border-bottom:1px solid #f0f0f0;background:#fff;margin-bottom:4px;border-radius:6px;transition:background 0.2s}
+.queueItem.mine{background:rgba(11,95,255,0.08);font-weight:600}
+.num{width:50px;font-weight:700;color:#0b5fff;text-align:center}
+.info{flex:1}
+.info .name{font-weight:600;color:#000;font-size:14px}
+.info .phone{color:#666;font-size:13px;margin-top:2px}
