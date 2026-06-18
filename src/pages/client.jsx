@@ -156,11 +156,29 @@ const Client = () => {
 
   const skipMyTicket = async () => {
   if (!myAppointment) return;
-  console.log("myAppointment:", myAppointment); // ← shu qatorni qo'shing
+
+  const currentPos = myPosition();
+  const maxSkip = currentPos ? appointments.length - currentPos : 0;
+
+  if (maxSkip < 1) {
+    alert("Siz allaqachon oxirgi navbatdasiz");
+    return;
+  }
+
+  const count = parseInt(prompt(`Nechta navbat surmoqchisiz? (maksimal ${maxSkip})`) || "0");
+  if (!count || count < 1) return;
+
+  const safeCount = Math.min(count, maxSkip);
+
   setLoading(true);
   try {
-    const res = await skipAppointment(myAppointment.id, 5);
-    console.log("skip response:", res); // ← shu ham
+    const res = await skipAppointment(myAppointment.id, safeCount);
+    if (res) {
+      alert(`✅ Navbat ${safeCount} taga surildi`);
+      await loadAppointments(selectedDoctor);
+    } else {
+      alert("Surishda xatolik");
+    }
   } catch (err) {
     console.error(err);
     alert("Surishda xatolik");
@@ -179,7 +197,7 @@ const Client = () => {
   return (
     <div className="clientPage">
       <div className="clientTop">
-        <h1>👥 Klient - Navbat olish</h1>
+        <h1>👥 Mijoz - Navbat olish</h1>
       </div>
 
       <div className="clientSection">
