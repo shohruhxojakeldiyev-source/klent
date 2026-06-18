@@ -15,6 +15,7 @@
 .myActions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
 .cancelBtn{background:#ff3b30;color:#fff;border:none;padding:10px 12px;border-radius:8px;cursor:pointer;font-weight:600;font-size: 16px;}
 .cancelBtn:hover{background:#e63228}
+.skipBtn{background: green;color: #fff;border: none;padding: 10px 12px;border-radius: 8px;cursor: pointer;font-weight: 600;font-size: 16px;}
 .queueList{margin-top:20px}
 .queueList h2{margin-bottom:12px;color:#333;font-size:18px}
 .queueList > p{color:#999;text-align:center;padding:20px}
