@@ -13,7 +13,7 @@
 .myCard h3{margin:0 0 12px;color:#0b5fff;font-size:16px}
 .myCard p{margin:6px 0;color:#333}
 .myActions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
-.cancelBtn{background:#ff3b30;color:#fff;border:none;padding:10px 12px;border-radius:8px;cursor:pointer;font-weight:600;flex:1;min-width:100px}
+.cancelBtn{background:#ff3b30;color:#fff;border:none;padding:10px 12px;border-radius:8px;cursor:pointer;font-weight:600;font-size: 16px;}
 .cancelBtn:hover{background:#e63228}
 .queueList{margin-top:20px}
 .queueList h2{margin-bottom:12px;color:#333;font-size:18px}

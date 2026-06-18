@@ -7,6 +7,7 @@ import {
   createAppointment,
   cancelAppointment,
   closeAppointment,
+  skipAppointment,
 } from "../api/api.js";
 
 const Client = () => {
@@ -81,11 +82,9 @@ const Client = () => {
   }, []);
 
   const takeTicket = async () => {
+
     const trimmedName = (name || "").trim();
     const trimmedPhone = (phone || "").trim();
-
-
-    console.debug('takeTicket:', { selectedDoctor, trimmedName, trimmedPhone });
 
     if (!selectedDoctor) return alert("Iltimos doktorni tanlang");
     if (!trimmedName || !trimmedPhone) return alert("Iltimos nom va telefon kiriting");
@@ -95,47 +94,22 @@ const Client = () => {
     try {
       const res = await createAppointment(selectedDoctor, trimmedName, trimmedPhone);
 
-      // If API returned the created appointment directly
-      if (res && (res.id || res.appointment_id)) {
+      if (res && res.message === "appointment created") {
         const appt = {
-          // prefer server fields, fall back to our values
-          id: res.id || res.appointment_id || null,
-          doctor_id: res.doctor_id || selectedDoctor,
-          patient_name: res.patient_name || res.name || trimmedName,
-          phone: res.phone || trimmedPhone,
-          ...res,
+          id: res.queue,
+          doctor_id: selectedDoctor,
+          patient_name: trimmedName,
+          phone: trimmedPhone,
+          queue: res.queue,
         };
         setMyAppointment(appt);
         localStorage.setItem("myAppointment", JSON.stringify(appt));
         setName("");
         setPhone("");
+        alert(`✅ Navbat muvaffaqiyatli olindi! Navbat raqamingiz: ${res.queue}`);
         await loadAppointments(selectedDoctor);
-
       } else {
-        // Fallback: reload appointments from server and try to find the new one by name+phone
-        const updated = await loadAppointments(selectedDoctor);
-        const normalize = (s) => (s || "").toString().trim().toLowerCase().replace(/\s+/g, "");
-        const nName = normalize(trimmedName);
-        const nPhone = normalize(trimmedPhone);
-
-        const found = Array.isArray(updated)
-          ? [...updated]
-              .reverse()
-              .find((a) => {
-                const aname = normalize(a.patient_name || a.name || a.patient);
-                const aphone = normalize(a.phone || a.phone_number || a.tel);
-                return aname === nName && aphone === nPhone;
-              })
-          : null;
-
-        if (found) {
-          setMyAppointment(found);
-          localStorage.setItem("myAppointment", JSON.stringify(found));
-          setName("");
-          setPhone("");
-        } else {
-          alert("Navbat olishda xatolik yuz berdi");
-        }
+        alert("Navbat olishda xatolik yuz berdi");
       }
     } catch (err) {
       console.error(err);
@@ -144,6 +118,7 @@ const Client = () => {
 
     setLoading(false);
   };
+
 
   const cancelMyTicket = async () => {
     if (!myAppointment) return;
@@ -178,13 +153,27 @@ const Client = () => {
     setLoading(false);
   };
 
+  const skipMyTicket = async () => {
+  if (!myAppointment) return;
+  console.log("myAppointment:", myAppointment); // ← shu qatorni qo'shing
+  setLoading(true);
+  try {
+    const res = await skipAppointment(myAppointment.id, 5);
+    console.log("skip response:", res); // ← shu ham
+  } catch (err) {
+    console.error(err);
+    alert("Surishda xatolik");
+  }
+  setLoading(false);
+};
+
   const myPosition = () => {
     if (!myAppointment) return null;
     const idx = appointments.findIndex((x) => String(x.id) === String(myAppointment.id));
     return idx === -1 ? null : idx + 1;
   };
 
-  if(doctors.length == 0) return (<div>Loading...</div>)
+  if (doctors.length == 0) return (<div>Loading...</div>)
 
   return (
     <div className="clientPage">
@@ -222,8 +211,10 @@ const Client = () => {
           <p>Pozitsiya: {myPosition() ?? "-"}</p>
 
           <div className="myActions">
-            <button onClick={cancelMyTicket} className="cancelBtn">❌ Bekor qilish</button>
-            <button onClick={finishMyTicket} className="finishBtn" style={{marginLeft:8,background:'#0b5fff',color:'#fff'}}>✅ Tugatish</button>
+            <div className="myActions">
+              <button onClick={cancelMyTicket} className="cancelBtn">❌ Bekor qilish</button>
+              <button onClick={skipMyTicket} disabled={loading} className="skipBtn">⏭️ Surish</button>
+            </div>
           </div>
         </div>
       )}
@@ -236,16 +227,16 @@ const Client = () => {
           <p>Navbat yo'q</p>
         ) : (
           appointments.map((a, i) => (
-              <div key={a.id} className={`queueItem ${myAppointment && String(myAppointment.id) === String(a.id) ? 'mine' : ''}`}>
-               <div className="num">#{i + 1}</div>
-               <div className="info">
-                 <div className="name">{a.patient_name || a.name || a.patient || "-"}</div>
-                 <div className="phone">{a.phone || "-"}</div>
-               </div>
-             </div>
-           ))
-         )}
-       </div>
+            <div key={a.id} className={`queueItem ${myAppointment && String(myAppointment.id) === String(a.id) ? 'mine' : ''}`}>
+              <div className="num">#{i + 1}</div>
+              <div className="info">
+                <div className="name">{a.patient_name || a.name || a.patient || "-"}</div>
+                <div className="phone">{a.phone || "-"}</div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 };

@@ -1,5 +1,5 @@
 import React from "react";
-import Client from "../pages/Client";
+import Client from "./pages/client";
 import "./App.css";
 
 function App() {
