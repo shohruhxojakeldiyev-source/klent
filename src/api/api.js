@@ -93,7 +93,7 @@ export const getAppointments = async (doctorId) => {
       throw new Error(data.detail || "Xatolik");
     }
 
-    return data.message || data;
+    return data.appointments || data.message || data;
   } catch (err) {
     console.error("getAppointments error:", err);
     return [];

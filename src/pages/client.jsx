@@ -20,7 +20,8 @@ const Client = () => {
 
   const [myAppointment, setMyAppointment] = useState(null);
   const [loading, setLoading] = useState(false);
-  
+  const [successMsg, setSuccessMsg] = useState("");
+
 
   const loadDoctors = async () => {
     const data = await getDoctors();
@@ -87,8 +88,8 @@ const Client = () => {
     const trimmedName = (name || "").trim();
     const trimmedPhone = (phone || "").trim();
 
-    if (!selectedDoctor) return alert("Iltimos doktorni tanlang");
-    if (!trimmedName || !trimmedPhone) return alert("Iltimos nom va telefon kiriting");
+    if (!selectedDoctor) return  setSuccessMsg("Iltimos doktorni tanlang");
+    if (!trimmedName || !trimmedPhone) return  setSuccessMsg("Iltimos nom va telefon kiriting");
 
     setLoading(true);
 
@@ -97,7 +98,7 @@ const Client = () => {
 
       if (res && res.message === "appointment created") {
         const appt = {
-          id: res.queue,
+          id: res.appointment_id || res.id || res.queue,
           doctor_id: selectedDoctor,
           patient_name: trimmedName,
           phone: trimmedPhone,
@@ -107,7 +108,7 @@ const Client = () => {
         localStorage.setItem("myAppointment", JSON.stringify(appt));
         setName("");
         setPhone("");
-        alert(`✅ Navbat muvaffaqiyatli olindi! Navbat raqamingiz: ${res.queue}`);
+        setSuccessMsg(`✅ Navbat muvaffaqiyatli olindi! Navbat raqamingiz: ${res.queue}`);
         await loadAppointments(selectedDoctor);
       } else {
         alert("Navbat olishda xatolik yuz berdi");
@@ -155,36 +156,36 @@ const Client = () => {
   };
 
   const skipMyTicket = async () => {
-  if (!myAppointment) return;
+    if (!myAppointment) return;
 
-  const currentPos = myPosition();
-  const maxSkip = currentPos ? appointments.length - currentPos : 0;
+    const currentPos = myPosition();
+    const maxSkip = currentPos ? appointments.length - currentPos : 0;
 
-  if (maxSkip < 1) {
-    alert("Siz allaqachon oxirgi navbatdasiz");
-    return;
-  }
+    if (maxSkip < 1) {
+       setSuccessMsg("Siz allaqachon oxirgi navbatdasiz");
+      return;
+    }
 
-  const count = parseInt(prompt(`Nechta navbat surmoqchisiz? (maksimal ${maxSkip})`) || "0");
-  if (!count || count < 1) return;
+    const count = parseInt(prompt(`Nechta navbat surmoqchisiz? (maksimal ${maxSkip})`) || "0");
+    if (!count || count < 1) return;
 
-  const safeCount = Math.min(count, maxSkip);
+    const safeCount = Math.min(count, maxSkip);
 
-  setLoading(true);
-  try {
-    const res = await skipAppointment(myAppointment.id, safeCount);
-    if (res) {
-      alert(`✅ Navbat ${safeCount} taga surildi`);
-      await loadAppointments(selectedDoctor);
-    } else {
+    setLoading(true);
+    try {
+      const res = await skipAppointment(myAppointment.id, safeCount);
+      if (res) {
+         setSuccessMsg(`✅ Navbat ${safeCount} taga surildi`);
+        await loadAppointments(selectedDoctor);
+      } else {
+        alert("Surishda xatolik");
+      }
+    } catch (err) {
+      console.error(err);
       alert("Surishda xatolik");
     }
-  } catch (err) {
-    console.error(err);
-    alert("Surishda xatolik");
-  }
-  setLoading(false);
-};
+    setLoading(false);
+  };
 
   const myPosition = () => {
     if (!myAppointment) return null;
@@ -199,6 +200,42 @@ const Client = () => {
       <div className="clientTop">
         <h1>👥 Mijoz - Navbat olish</h1>
       </div>
+
+      {successMsg && (
+       <div style={{
+          position: "fixed",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          background: "linear-gradient(135deg, #22c55e, #16a34a)",
+          color: "#fff",
+          padding: "32px 28px",
+          borderRadius: "16px",
+          fontWeight: "600",
+          fontSize: "16px",
+          textAlign: "center",
+          boxShadow: "0 20px 50px rgba(0,0,0,0.3)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "16px",
+          width: "320px",
+          zIndex: 1000
+        }}>
+      
+          <span>✅ {successMsg}</span>
+         <button onClick={() => setSuccessMsg("")} style={{
+            background: "rgba(255,255,255,0.2)",
+            border: "none",
+            borderRadius: "8px",
+            padding: "8px 24px",
+            color: "#fff",
+            fontSize: "16px",
+            fontWeight: "600",
+            cursor: "pointer"
+          }}>OK</button>
+        </div>
+      )}
 
       <div className="clientSection">
         <label>Doktorni tanlang</label>
