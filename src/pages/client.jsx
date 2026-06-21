@@ -258,15 +258,15 @@ const Client = () => {
           zIndex: 999
         }}>
           <div style={{
-            background: "#042a44ff",
+            background: "#fff",
             padding: "28px",
             borderRadius: "16px",
             width: "300px",
             textAlign: "center",
             boxShadow: "0 20px 50px rgba(0,0,0,0.3)"
           }}>
-            <h3 style={{ color: "#cbd7cfff",margin: "0 0 16px" }}>Nechta navbat surmoqchisiz?</h3>
-            <p style={{ color: "#bcdcc7ff", margin: "0 0 16px" }}>Maksimal: {maxSkipValue}</p>
+            <h3 style={{ margin: "0 0 16px" }}>Nechta navbat surmoqchisiz?</h3>
+            <p style={{ margin: "0 0 16px" }}>Maksimal: {maxSkipValue}</p>
             <input
               type="number"
               min=""
@@ -277,7 +277,7 @@ const Client = () => {
                 width: "100%", padding: "10px", fontSize: "18px",
                 textAlign: "center", borderRadius: "8px",
                 border: "2px solid #16a34a", marginBottom: "16px",
-                color: "#111", background: "#fff",
+                color: "#111", background: "#013916ff",
                 boxSizing: "border-box"
               }}
             />
