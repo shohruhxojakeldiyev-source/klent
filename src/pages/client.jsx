@@ -171,7 +171,7 @@ const Client = () => {
     }
 
     setMaxSkipValue(maxSkip);
-    setSkipCount("1");
+    setSkipCount("");
     setShowSkipModal(true);
   };
 
@@ -258,15 +258,15 @@ const Client = () => {
           zIndex: 999
         }}>
           <div style={{
-            background: "#fff",
+            background: "#042a44ff",
             padding: "28px",
             borderRadius: "16px",
             width: "300px",
             textAlign: "center",
             boxShadow: "0 20px 50px rgba(0,0,0,0.3)"
           }}>
-            <h3 style={{ margin: "0 0 16px" }}>Nechta navbat surmoqchisiz?</h3>
-            <p style={{ color: "#666", margin: "0 0 16px" }}>Maksimal: {maxSkipValue}</p>
+            <h3 style={{ color: "#cbd7cfff",margin: "0 0 16px" }}>Nechta navbat surmoqchisiz?</h3>
+            <p style={{ color: "#bcdcc7ff", margin: "0 0 16px" }}>Maksimal: {maxSkipValue}</p>
             <input
               type="number"
               min=""
@@ -284,11 +284,11 @@ const Client = () => {
             <div style={{ display: "flex", gap: "8px" }}>
               <button onClick={() => setShowSkipModal(false)} style={{
                 flex: 1, padding: "10px", borderRadius: "8px",
-                border: "none", background: "#e5e7eb", cursor: "pointer"
+                border: "none", background: "#de0d11ff", cursor: "pointer"
               }}>Bekor qilish</button>
               <button onClick={confirmSkip} style={{
                 flex: 1, padding: "10px", borderRadius: "8px",
-                border: "none", background: "#16a34a", color: "#fff",
+                border: "none", background: "#013916ff", color: "#fff",
                 fontWeight: "600", cursor: "pointer"
               }}>Tasdiqlash</button>
             </div>
