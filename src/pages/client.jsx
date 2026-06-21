@@ -160,45 +160,45 @@ const Client = () => {
   };
 
   const skipMyTicket = () => {
-  if (!myAppointment) return;
+    if (!myAppointment) return;
 
-  const currentPos = myPosition();
-  const maxSkip = currentPos ? appointments.length - currentPos : 0;
+    const currentPos = myPosition();
+    const maxSkip = currentPos ? appointments.length - currentPos : 0;
 
-  if (maxSkip < 1) {
-    alert("Siz allaqachon oxirgi navbatdasiz");
-    return;
-  }
+    if (maxSkip < 1) {
+      alert("Siz allaqachon oxirgi navbatdasiz");
+      return;
+    }
 
-  setMaxSkipValue(maxSkip);
-  setSkipCount("1");
-  setShowSkipModal(true);
-};
+    setMaxSkipValue(maxSkip);
+    setSkipCount("1");
+    setShowSkipModal(true);
+  };
 
-const confirmSkip = async () => {
-  const count = parseInt(skipCount || "0");
-  if (!count || count < 1) {
+  const confirmSkip = async () => {
+    const count = parseInt(skipCount || "0");
+    if (!count || count < 1) {
+      setShowSkipModal(false);
+      return;
+    }
+
+    const safeCount = Math.min(count, maxSkipValue);
     setShowSkipModal(false);
-    return;
-  }
-
-  const safeCount = Math.min(count, maxSkipValue);
-  setShowSkipModal(false);
-  setLoading(true);
-  try {
-    const res = await skipAppointment(myAppointment.id, safeCount);
-    if (res) {
-      setSuccessMsg(`Navbat ${safeCount} taga surildi`);
-      await loadAppointments(selectedDoctor);
-    } else {
+    setLoading(true);
+    try {
+      const res = await skipAppointment(myAppointment.id, safeCount);
+      if (res) {
+        setSuccessMsg(`Navbat ${safeCount} taga surildi`);
+        await loadAppointments(selectedDoctor);
+      } else {
+        alert("Surishda xatolik");
+      }
+    } catch (err) {
+      console.error(err);
       alert("Surishda xatolik");
     }
-  } catch (err) {
-    console.error(err);
-    alert("Surishda xatolik");
-  }
-  setLoading(false);
-};
+    setLoading(false);
+  };
 
   const myPosition = () => {
     if (!myAppointment) return null;
@@ -251,48 +251,50 @@ const confirmSkip = async () => {
       )}
 
       {showSkipModal && (
-  <div style={{
-    position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-    background: "rgba(0,0,0,0.5)",
-    display: "flex", alignItems: "center", justifyContent: "center",
-    zIndex: 999
-  }}>
-    <div style={{
-      background: "#fff",
-      padding: "28px",
-      borderRadius: "16px",
-      width: "300px",
-      textAlign: "center",
-      boxShadow: "0 20px 50px rgba(0,0,0,0.3)"
-    }}>
-      <h3 style={{margin: "0 0 16px"}}>Nechta navbat surmoqchisiz?</h3>
-      <p style={{color: "#666", margin: "0 0 16px"}}>Maksimal: {maxSkipValue}</p>
-      <input
-        type="number"
-        min="1"
-        max={maxSkipValue}
-        value={skipCount}
-        onChange={(e) => setSkipCount(e.target.value)}
-        style={{
-          width: "100%", padding: "10px", fontSize: "18px",
-          textAlign: "center", borderRadius: "8px",
-          border: "1px solid #ddd", marginBottom: "16px"
-        }}
-      />
-      <div style={{display: "flex", gap: "8px"}}>
-        <button onClick={() => setShowSkipModal(false)} style={{
-          flex: 1, padding: "10px", borderRadius: "8px",
-          border: "none", background: "#e5e7eb", cursor: "pointer"
-        }}>Bekor qilish</button>
-        <button onClick={confirmSkip} style={{
-          flex: 1, padding: "10px", borderRadius: "8px",
-          border: "none", background: "#16a34a", color: "#fff",
-          fontWeight: "600", cursor: "pointer"
-        }}>Tasdiqlash</button>
-      </div>
-    </div>
-  </div>
-)}
+        <div style={{
+          position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+          background: "rgba(0,0,0,0.5)",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          zIndex: 999
+        }}>
+          <div style={{
+            background: "#fff",
+            padding: "28px",
+            borderRadius: "16px",
+            width: "300px",
+            textAlign: "center",
+            boxShadow: "0 20px 50px rgba(0,0,0,0.3)"
+          }}>
+            <h3 style={{ margin: "0 0 16px" }}>Nechta navbat surmoqchisiz?</h3>
+            <p style={{ color: "#666", margin: "0 0 16px" }}>Maksimal: {maxSkipValue}</p>
+            <input
+              type="number"
+              min=""
+              max={maxSkipValue}
+              value={skipCount}
+              onChange={(e) => setSkipCount(e.target.value)}
+              style={{
+                width: "100%", padding: "10px", fontSize: "18px",
+                textAlign: "center", borderRadius: "8px",
+                border: "2px solid #16a34a", marginBottom: "16px",
+                color: "#111", background: "#fff",
+                boxSizing: "border-box"
+              }}
+            />
+            <div style={{ display: "flex", gap: "8px" }}>
+              <button onClick={() => setShowSkipModal(false)} style={{
+                flex: 1, padding: "10px", borderRadius: "8px",
+                border: "none", background: "#e5e7eb", cursor: "pointer"
+              }}>Bekor qilish</button>
+              <button onClick={confirmSkip} style={{
+                flex: 1, padding: "10px", borderRadius: "8px",
+                border: "none", background: "#16a34a", color: "#fff",
+                fontWeight: "600", cursor: "pointer"
+              }}>Tasdiqlash</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="clientSection">
         <label>Doktorni tanlang</label>
