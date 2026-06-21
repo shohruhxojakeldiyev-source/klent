@@ -277,7 +277,7 @@ const Client = () => {
                 width: "100%", padding: "10px", fontSize: "18px",
                 textAlign: "center", borderRadius: "8px",
                 border: "2px solid #16a34a", marginBottom: "16px",
-                color: "#111", background: "#013916ff",
+                color: "#111", background: "#fff",
                 boxSizing: "border-box"
               }}
             />
