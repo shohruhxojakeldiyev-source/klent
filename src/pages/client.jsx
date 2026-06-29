@@ -10,6 +10,9 @@ import {
   skipAppointment,
 } from "../api/api.js";
 
+// WebSocket — alohida fayldan (src/api/socket.js)
+import { connectAppointmentSocket } from "../api/socket.js";
+
 const Client = () => {
   const [doctors, setDoctors] = useState([]);
   const [selectedDoctor, setSelectedDoctor] = useState("");
@@ -36,7 +39,6 @@ const Client = () => {
       return;
     }
 
-    // Empty doctors list
     console.warn("No doctors available from API");
     setDoctors([]);
   };
@@ -46,7 +48,6 @@ const Client = () => {
     setLoading(true);
     const data = await getAppointments(doctorId);
     const list = Array.isArray(data) ? data : [];
-    // normalize each item to ensure consistent fields used by the UI
     const normalized = list.map((a) => ({
       id: a.id || a.appointment_id || a.app_id || null,
       doctor_id: a.doctor_id || a.doctor || null,
@@ -76,7 +77,6 @@ const Client = () => {
       try {
         const parsed = JSON.parse(stored);
         setMyAppointment(parsed);
-        // if doctor changed, refresh appointments
         const docId = parsed && parsed.doctor_id ? String(parsed.doctor_id) : "";
         if (docId && docId !== selectedDoctor) {
           setSelectedDoctor(docId);
@@ -87,8 +87,44 @@ const Client = () => {
     }
   }, []);
 
-  const takeTicket = async () => {
+  // ===== WebSocket real-time =====
+  // Backend tayyor JSON yuboradi:
+  //   { type, queue, title, body }
+  //   type: "your_turn" (1) | "prepare" (2) | "queue_update" (3+)
+  useEffect(() => {
+    if (!myAppointment?.id) return;
 
+    const cleanup = connectAppointmentSocket(myAppointment.id, (data) => {
+      let msg;
+      try {
+        msg = typeof data === "string" ? JSON.parse(data) : data;
+      } catch (e) {
+        console.warn("WS xabarini o'qib bo'lmadi:", data);
+        return;
+      }
+
+      // ro'yxatdagi pozitsiyani serverdan kelgan queue bilan yangilaymiz
+      if (msg.queue != null) {
+        setMyAppointment((prev) =>
+          prev ? { ...prev, queue: msg.queue } : prev
+        );
+      }
+      // ro'yxatni ham yangilab qo'yamiz (boshqalar uchun)
+      loadAppointments(selectedDoctor);
+
+      // your_turn (1) va prepare (2) da modal chiqaramiz.
+      // queue_update (3+) da jim — faqat raqam yangilanadi.
+      if (msg.type === "your_turn") {
+        setSuccessMsg(`🔔 ${msg.title || "Navbatingiz keldi!"}\n${msg.body || ""}`);
+      } else if (msg.type === "prepare") {
+        setSuccessMsg(`⏳ ${msg.title || "Tayyorlaning!"}\n${msg.body || ""}`);
+      }
+    });
+
+    return cleanup;
+  }, [myAppointment?.id, selectedDoctor]);
+
+  const takeTicket = async () => {
     const trimmedName = (name || "").trim();
     const trimmedPhone = (phone || "").trim();
 
@@ -98,21 +134,23 @@ const Client = () => {
     setLoading(true);
 
     try {
-      const res = await createAppointment(selectedDoctor, trimmedName, trimmedPhone);
+      // telefonni +998 bilan birga yuboramiz
+      const fullPhone = "+998" + trimmedPhone;
+      const res = await createAppointment(selectedDoctor, trimmedName, fullPhone);
 
       if (res && res.message === "appointment created") {
         const appt = {
           id: res.appointment_id || res.id || res.queue,
           doctor_id: selectedDoctor,
           patient_name: trimmedName,
-          phone: trimmedPhone,
+          phone: fullPhone,
           queue: res.queue,
         };
         setMyAppointment(appt);
         localStorage.setItem("myAppointment", JSON.stringify(appt));
         setName("");
         setPhone("");
-        setSuccessMsg(`✅ Navbat muvaffaqiyatli olindi! Navbat raqamingiz: ${res.queue}`);
+        setSuccessMsg(`Navbat olindi! Navbat raqamingiz: ${res.queue}`);
         await loadAppointments(selectedDoctor);
       } else {
         alert("Navbat olishda xatolik yuz berdi");
@@ -124,7 +162,6 @@ const Client = () => {
 
     setLoading(false);
   };
-
 
   const cancelMyTicket = async () => {
     if (!myAppointment) return;
@@ -140,22 +177,6 @@ const Client = () => {
       alert("Bekor qilishda xatolik");
     }
 
-    setLoading(false);
-  };
-
-  // Navbatni tugatish
-  const finishMyTicket = async () => {
-    if (!myAppointment) return;
-    setLoading(true);
-    try {
-      await closeAppointment(myAppointment.id);
-      setMyAppointment(null);
-      localStorage.removeItem("myAppointment");
-      loadAppointments(selectedDoctor);
-    } catch (err) {
-      console.error(err);
-      alert("Tugatishda xatolik");
-    }
     setLoading(false);
   };
 
@@ -206,12 +227,12 @@ const Client = () => {
     return idx === -1 ? null : idx + 1;
   };
 
-  if (doctors.length == 0) return (<div>Loading...</div>)
+  if (doctors.length == 0) return (<div className="clientPage"><p style={{ textAlign: "center", color: "#64748b" }}>Yuklanmoqda...</p></div>)
 
   return (
     <div className="clientPage">
       <div className="clientTop">
-        <h1>👥 Mijoz - Navbat olish</h1>
+        <h1>Navbat olish</h1>
       </div>
 
       {successMsg && (
@@ -233,10 +254,10 @@ const Client = () => {
           alignItems: "center",
           gap: "16px",
           width: "320px",
+          maxWidth: "calc(100vw - 32px)",
           zIndex: 1000
         }}>
-
-          <span>✅ {successMsg}</span>
+          <span style={{ whiteSpace: "pre-line", lineHeight: 1.5 }}>{successMsg}</span>
           <button onClick={() => setSuccessMsg("")} style={{
             background: "rgba(255,255,255,0.2)",
             border: "none",
@@ -255,27 +276,28 @@ const Client = () => {
           position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
           background: "rgba(0,0,0,0.5)",
           display: "flex", alignItems: "center", justifyContent: "center",
-          zIndex: 999
+          zIndex: 999, padding: "16px"
         }}>
           <div style={{
             background: "#fff",
             padding: "28px",
             borderRadius: "16px",
             width: "300px",
+            maxWidth: "100%",
             textAlign: "center",
             boxShadow: "0 20px 50px rgba(0,0,0,0.3)"
           }}>
-            <h3 style={{ margin: "0 0 16px" }}>Nechta navbat surmoqchisiz?</h3>
-            <p style={{ margin: "0 0 16px" }}>Maksimal: {maxSkipValue}</p>
+            <h3 style={{ margin: "0 0 16px", color: "#0f172a" }}>Nechta navbat surmoqchisiz?</h3>
+            <p style={{ margin: "0 0 16px", color: "#64748b" }}>Maksimal: {maxSkipValue}</p>
             <input
               type="number"
-              min=""
+              min={1}
               max={maxSkipValue}
               value={skipCount}
               onChange={(e) => setSkipCount(e.target.value)}
               style={{
-                width: "100%", padding: "10px", fontSize: "18px",
-                textAlign: "center", borderRadius: "8px",
+                width: "100%", padding: "12px", fontSize: "18px",
+                textAlign: "center", borderRadius: "10px",
                 border: "2px solid #16a34a", marginBottom: "16px",
                 color: "#111", background: "#fff",
                 boxSizing: "border-box"
@@ -283,12 +305,13 @@ const Client = () => {
             />
             <div style={{ display: "flex", gap: "8px" }}>
               <button onClick={() => setShowSkipModal(false)} style={{
-                flex: 1, padding: "10px", borderRadius: "8px",
-                border: "none", background: "#de0d11ff", cursor: "pointer"
+                flex: 1, padding: "12px", borderRadius: "10px",
+                border: "none", background: "#ef4444", color: "#fff",
+                fontWeight: "600", cursor: "pointer"
               }}>Bekor qilish</button>
               <button onClick={confirmSkip} style={{
-                flex: 1, padding: "10px", borderRadius: "8px",
-                border: "none", background: "#013916ff", color: "#fff",
+                flex: 1, padding: "12px", borderRadius: "10px",
+                border: "none", background: "#16a34a", color: "#fff",
                 fontWeight: "600", cursor: "pointer"
               }}>Tasdiqlash</button>
             </div>
@@ -309,8 +332,36 @@ const Client = () => {
       </div>
 
       <div className="clientSection form">
-        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ism familyangiz" />
-        <input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="Telefon nomer" />
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="Ism familyangiz"
+        />
+
+        {/* Telefon: +998 doim turadi, foydalanuvchi 9 raqam kiritadi */}
+        <div style={{ position: "relative", width: "100%" }}>
+          <span style={{
+            position: "absolute",
+            left: "14px",
+            top: "50%",
+            transform: "translateY(-50%)",
+            color: "#0f172a",
+            fontSize: "16px",
+            fontWeight: "500",
+            pointerEvents: "none"
+          }}>+998</span>
+          <input
+            value={phone}
+            onChange={(e) => {
+              // faqat raqam, maksimal 9 ta
+              const digits = e.target.value.replace(/\D/g, "").slice(0, 9);
+              setPhone(digits);
+            }}
+            placeholder=""
+            inputMode="numeric"
+            style={{ paddingLeft: "60px" }}
+          />
+        </div>
 
         <button onClick={takeTicket} disabled={loading} className="takeBtn">
           Navbat olish
@@ -319,17 +370,16 @@ const Client = () => {
 
       {myAppointment && (
         <div className="myCard">
-          <h3>Sizning navbatingiz</h3>
-          <p>#{myAppointment.id}</p>
-          <p>{myAppointment.patient_name || myAppointment.name || myAppointment.patient || ""}</p>
-          <p>{myAppointment.phone}</p>
-          <p>Pozitsiya: {myPosition() ?? "-"}</p>
+          <p className="myLabel">Sizning navbatingiz</p>
+          <div className="myNumber">{myAppointment.queue ?? myPosition() ?? "-"}</div>
+          <p className="myNumberCaption">navbatingiz</p>
+          <p className="myName">
+            {myAppointment.patient_name || myAppointment.name || myAppointment.patient || ""}
+          </p>
 
           <div className="myActions">
-            <div className="myActions">
-              <button onClick={cancelMyTicket} className="cancelBtn">❌ Bekor qilish</button>
-              <button onClick={skipMyTicket} disabled={loading} className="skipBtn">⏭️ Surish</button>
-            </div>
+            <button onClick={cancelMyTicket} className="cancelBtn">Bekor qilish</button>
+            <button onClick={skipMyTicket} disabled={loading} className="skipBtn">Surish</button>
           </div>
         </div>
       )}
@@ -342,11 +392,10 @@ const Client = () => {
           <p>Navbat yo'q</p>
         ) : (
           appointments.map((a, i) => (
-            <div key={a.id} className={`queueItem ${myAppointment && String(myAppointment.id) === String(a.id) ? 'mine' : ''}`}>
-              <div className="num">#{i + 1}</div>
+            <div key={a.id ?? i} className={`queueItem ${myAppointment && String(myAppointment.id) === String(a.id) ? 'mine' : ''}`}>
+              <div className="num">{i + 1}</div>
               <div className="info">
                 <div className="name">{a.patient_name || a.name || a.patient || "-"}</div>
-                <div className="phone">{a.phone || "-"}</div>
               </div>
             </div>
           ))
