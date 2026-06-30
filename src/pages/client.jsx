@@ -134,16 +134,15 @@ const Client = () => {
     setLoading(true);
 
     try {
-      // telefonni +998 bilan birga yuboramiz
-      const fullPhone = "+998" + trimmedPhone;
-      const res = await createAppointment(selectedDoctor, trimmedName, fullPhone);
+      // backendga foydalanuvchi kiritgan telefonni yuboramiz (+998 siz, eski format)
+      const res = await createAppointment(selectedDoctor, trimmedName, trimmedPhone);
 
       if (res && res.message === "appointment created") {
         const appt = {
           id: res.appointment_id || res.id || res.queue,
           doctor_id: selectedDoctor,
           patient_name: trimmedName,
-          phone: fullPhone,
+          phone: trimmedPhone,
           queue: res.queue,
         };
         setMyAppointment(appt);
