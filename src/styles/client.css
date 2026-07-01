@@ -126,11 +126,7 @@
   margin: 8px 0 2px;
   font-variant-numeric: tabular-nums;
 }
-.myCard .myNumberCaption {
-  margin: 0 0 18px;
-  font-size: 15px;
-  color: var(--ink-soft);
-}
+
 .myCard .myName {
   margin: 0;
   font-size: 17px;

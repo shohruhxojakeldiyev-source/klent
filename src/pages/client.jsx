@@ -24,6 +24,7 @@ const Client = () => {
   const [myAppointment, setMyAppointment] = useState(null);
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
+  const [alert, setAlert] = useState("");
 
   const [showSkipModal, setShowSkipModal] = useState(false);
   const [skipCount, setSkipCount] = useState("");
@@ -57,6 +58,21 @@ const Client = () => {
     }));
 
     setAppointments(normalized);
+
+    // Mening navbatim serverda hali bormi tekshiramiz.
+    // Yo'q bo'lsa (doktor bekor qilgan, yoki ro'yxat bo'sh) — kartani o'chiramiz.
+    setMyAppointment((prev) => {
+      if (!prev) return prev;
+      const stillExists = normalized.some(
+        (a) => String(a.id) === String(prev.id)
+      );
+      if (!stillExists) {
+        localStorage.removeItem("myAppointment");
+        return null;
+      }
+      return prev;
+    });
+
     setLoading(false);
     return normalized;
   };
@@ -149,14 +165,14 @@ const Client = () => {
         localStorage.setItem("myAppointment", JSON.stringify(appt));
         setName("");
         setPhone("");
-        setSuccessMsg(`Navbat olindi! Navbat raqamingiz: ${res.queue}`);
+        setSuccessMsg(`Navbat olindi! Navbat raqamingiz: ${res.queue} `);
         await loadAppointments(selectedDoctor);
       } else {
-        alert("Navbat olishda xatolik yuz berdi");
+        setAlert("Navbat olishda xatolik yuz berdi");
       }
     } catch (err) {
       console.error(err);
-      alert("Xatolik: iltimos keyinroq urinib ko'ring");
+      setAlert("Xatolik: iltimos keyinroq urinib ko'ring");
     }
 
     setLoading(false);
@@ -173,7 +189,7 @@ const Client = () => {
       loadAppointments(selectedDoctor);
     } catch (err) {
       console.error(err);
-      alert("Bekor qilishda xatolik");
+      setAlert("Bekor qilishda xatolik");
     }
 
     setLoading(false);
@@ -186,7 +202,7 @@ const Client = () => {
     const maxSkip = currentPos ? appointments.length - currentPos : 0;
 
     if (maxSkip < 1) {
-      alert("Siz allaqachon oxirgi navbatdasiz");
+      setAlert("Siz allaqachon oxirgi navbatdasiz");
       return;
     }
 
@@ -215,7 +231,7 @@ const Client = () => {
       }
     } catch (err) {
       console.error(err);
-      alert("Surishda xatolik");
+      setAlert("Surishda xatolik");
     }
     setLoading(false);
   };
@@ -269,6 +285,46 @@ const Client = () => {
           }}>OK</button>
         </div>
       )}
+
+      
+      {alert && (
+        <div style={{
+          position: "fixed",
+          top: "50%",
+          left: "50%",
+          transform: "translate(-50%, -50%)",
+          background: "linear-gradient(135deg, #c41c1cff, #9d1111ff)",
+          color: "#fff",
+          padding: "32px 28px",
+          borderRadius: "16px",
+          fontWeight: "600",
+          fontSize: "16px",
+          textAlign: "center",
+          boxShadow: "0 20px 50px rgba(0,0,0,0.3)",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          gap: "16px",
+          width: "320px",
+          maxWidth: "calc(100vw - 32px)",
+          zIndex: 1000
+        }}>
+          <span style={{ whiteSpace: "pre-line", lineHeight: 1.5 }}>{alert}</span>
+          <button onClick={() => setAlert("")} style={{
+            background: "rgba(255,255,255,0.2)",
+            border: "none",
+            borderRadius: "8px",
+            padding: "8px 24px",
+            color: "#fff",
+            fontSize: "16px",
+            fontWeight: "600",
+            cursor: "pointer"
+          }}>OK</button>
+        </div>
+      )}
+
+
+
 
       {showSkipModal && (
         <div style={{
@@ -371,7 +427,7 @@ const Client = () => {
         <div className="myCard">
           <p className="myLabel">Sizning navbatingiz</p>
           <div className="myNumber">{myAppointment.queue ?? myPosition() ?? "-"}</div>
-          <p className="myNumberCaption">navbatingiz</p>
+          
           <p className="myName">
             {myAppointment.patient_name || myAppointment.name || myAppointment.patient || ""}
           </p>
