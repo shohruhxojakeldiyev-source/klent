@@ -87,6 +87,10 @@ export const getAppointments = async (doctorId) => {
       method: "GET",
     });
 
+    if (res.status === 404) {
+      return [];
+    }
+
     const data = await res.json();
 
     if (!res.ok) {

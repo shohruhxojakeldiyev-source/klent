@@ -44,9 +44,9 @@ const Client = () => {
     setDoctors([]);
   };
 
-  const loadAppointments = async (doctorId) => {
+  const loadAppointments = async (doctorId, silent = false) => {
     if (!doctorId) return [];
-    setLoading(true);
+    if (!silent) setLoading(true);
     const data = await getAppointments(doctorId);
     const list = Array.isArray(data) ? data : [];
     const normalized = list.map((a) => ({
@@ -73,7 +73,7 @@ const Client = () => {
       return prev;
     });
 
-    setLoading(false);
+    if (!silent) setLoading(false);
     return normalized;
   };
 
@@ -140,7 +140,23 @@ const Client = () => {
     return cleanup;
   }, [myAppointment?.id, selectedDoctor]);
 
+  useEffect(() => {
+    if (!selectedDoctor) return;
+
+    const interval = setInterval(() => {
+      loadAppointments(selectedDoctor, true);
+    }, 7000);
+
+    return () => clearInterval(interval);
+  }, [selectedDoctor]);
+
+
   const takeTicket = async () => {
+    if (myAppointment) {
+      setAlert("Sizda allaqachon faol navbat bor. Avval uni bekor qiling yoki tugashini kuting.");
+      return;
+    }
+
     const trimmedName = (name || "").trim();
     const trimmedPhone = (phone || "").trim();
 
@@ -286,7 +302,7 @@ const Client = () => {
         </div>
       )}
 
-      
+
       {alert && (
         <div style={{
           position: "fixed",
@@ -374,60 +390,63 @@ const Client = () => {
         </div>
       )}
 
-      <div className="clientSection">
-        <label>Doktorni tanlang</label>
-        <select value={selectedDoctor} onChange={(e) => setSelectedDoctor(e.target.value)}>
-          <option value="">-- Doktorni tanlang --</option>
-          {doctors.map((d) => (
-            <option key={d.id} value={d.id}>
-              {d.name} - {d.specialization}
-            </option>
-          ))}
-        </select>
-      </div>
+      {!myAppointment && (
+        <>
+          <div className="clientSection">
+            <label>Doktorni tanlang</label>
+            <select value={selectedDoctor} onChange={(e) => setSelectedDoctor(e.target.value)}>
+              <option value="">-- Doktorni tanlang --</option>
+              {doctors.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name} - {d.specialization}
+                </option>
+              ))}
+            </select>
+          </div>
 
-      <div className="clientSection form">
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          placeholder="Ism familyangiz"
-        />
+          <div className="clientSection form">
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="Ism familyangiz"
+            />
 
-        {/* Telefon: +998 doim turadi, foydalanuvchi 9 raqam kiritadi */}
-        <div style={{ position: "relative", width: "100%" }}>
-          <span style={{
-            position: "absolute",
-            left: "14px",
-            top: "50%",
-            transform: "translateY(-50%)",
-            color: "#0f172a",
-            fontSize: "16px",
-            fontWeight: "500",
-            pointerEvents: "none"
-          }}>+998</span>
-          <input
-            value={phone}
-            onChange={(e) => {
-              // faqat raqam, maksimal 9 ta
-              const digits = e.target.value.replace(/\D/g, "").slice(0, 9);
-              setPhone(digits);
-            }}
-            placeholder=""
-            inputMode="numeric"
-            style={{ paddingLeft: "60px" }}
-          />
-        </div>
+            {/* Telefon: +998 doim turadi, foydalanuvchi 9 raqam kiritadi */}
+            <div style={{ position: "relative", width: "100%" }}>
+              <span style={{
+                position: "absolute",
+                left: "14px",
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: "#0f172a",
+                fontSize: "16px",
+                fontWeight: "500",
+                pointerEvents: "none"
+              }}>+998</span>
+              <input
+                value={phone}
+                onChange={(e) => {
+                  const digits = e.target.value.replace(/\D/g, "").slice(0, 9);
+                  setPhone(digits);
+                }}
+                placeholder=""
+                inputMode="numeric"
+                style={{ paddingLeft: "60px" }}
+              />
+            </div>
 
-        <button onClick={takeTicket} disabled={loading} className="takeBtn">
-          Navbat olish
-        </button>
-      </div>
+            <button onClick={takeTicket} disabled={loading} className="takeBtn">
+              Navbat olish
+            </button>
+          </div>
+        </>
+      )}
 
       {myAppointment && (
         <div className="myCard">
           <p className="myLabel">Sizning navbatingiz</p>
           <div className="myNumber">{myAppointment.queue ?? myPosition() ?? "-"}</div>
-          
+
           <p className="myName">
             {myAppointment.patient_name || myAppointment.name || myAppointment.patient || ""}
           </p>
@@ -439,23 +458,17 @@ const Client = () => {
         </div>
       )}
 
-      <div className="queueList">
-        <h2>Navbat ro'yxati</h2>
-        {loading ? (
-          <p>Yuklanmoqda...</p>
-        ) : appointments.length === 0 ? (
-          <p>Navbat yo'q</p>
-        ) : (
-          appointments.map((a, i) => (
-            <div key={a.id ?? i} className={`queueItem ${myAppointment && String(myAppointment.id) === String(a.id) ? 'mine' : ''}`}>
-              <div className="num">{i + 1}</div>
-              <div className="info">
-                <div className="name">{a.patient_name || a.name || a.patient || "-"}</div>
-              </div>
-            </div>
-          ))
-        )}
-      </div>
+    {!myAppointment && (
+        <div className="queueList">
+          <h2>Navbat ro'yxati</h2>
+          {loading ? (
+            <p>Yuklanmoqda...</p>
+          ) : (
+            <p>Hozirda navbatda {appointments.length} kishi bor</p>
+          )}
+        </div>
+      )}
+
     </div>
   );
 };
