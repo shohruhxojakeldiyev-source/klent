@@ -1,97 +1,84 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { register, sendCode, createAppointment } from "../api/api";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { sendCode, register, createAppointment } from "../api/api";
 
 const Register = () => {
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+
+  // URL dan doctor_id olish va saqlash
+  useEffect(() => {
+    const doctorId = searchParams.get("doctor_id");
+    if (doctorId) {
+      localStorage.setItem("doctor_id", doctorId);
+    }
+  }, []);
+
+  const [step, setStep] = useState(1); // 1: ma'lumot kiritish, 2: kodni tasdiqlash
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [code, setCode] = useState("");
-  const [step, setStep] = useState(1); // 1 - ma'lumotlar, 2 - kod tasdiqlash
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   // 1-qadam: SMS kod yuborish
   const handleSendCode = async () => {
     setError("");
-    if (!name.trim()) return setError("Ism familiyani kiriting");
+    if (!name.trim()) return setError("Ism familiyangizni kiriting");
     if (!phone.trim() || phone.length !== 9) return setError("9 ta raqam kiriting");
-    if (!password || password.length < 4) return setError("Parol kamida 4 ta belgi");
+    if (!password || password.length < 6) return setError("Parol kamida 6 ta belgi bo'lishi kerak");
 
     setLoading(true);
-    const result = await sendCode(phone);
-    setLoading(false);
-
-    if (result) {
-      setStep(2);
-    } else {
-      setError("SMS kod yuborishda xatolik");
+    try {
+      const res = await sendCode(phone);
+      if (res) {
+        setStep(2);
+      } else {
+        setError("SMS yuborishda xatolik");
+      }
+    } catch (err) {
+      setError("Xatolik yuz berdi");
     }
+    setLoading(false);
   };
 
-  // 2-qadam: Ro'yxatdan o'tish va navbat olish
+  // 2-qadam: ro'yxatdan o'tish va navbat olish
   const handleRegister = async () => {
     setError("");
-    if (!code || code.length !== 6) return setError("6 xonalik kodni kiriting");
+    if (!code.trim()) return setError("Kodni kiriting");
 
     setLoading(true);
-
     try {
-      // 1. Ro'yxatdan o'tish
-      const registerResult = await register(name, phone, password, code);
-      console.log('📝 Ro\'yxatdan o\'tish javobi:', registerResult);
+      const doctorId = localStorage.getItem("doctor_id");
 
-      if (!registerResult || !registerResult.access_token) {
+      // Register
+      const res = await register(name.trim(), phone, password, code);
+      if (!res || !res.access_token) {
         setError("Ro'yxatdan o'tishda xatolik");
         setLoading(false);
         return;
       }
 
-      // 2. Tokenni saqlash
-      localStorage.setItem("access_token", registerResult.access_token);
-      localStorage.setItem("user_name", registerResult.name || name);
+      // Tokenni saqlash
+      localStorage.setItem("access_token", res.access_token);
+      localStorage.setItem("user_name", res.name || name.trim());
 
-      // 3. Doctor ID ni localStorage dan olish
-      const doctorId = localStorage.getItem("doctor_id");
-      console.log('👨‍⚕️ Doctor ID:', doctorId);
-
-      if (!doctorId) {
-        setError("Doctor ID topilmadi. QR kodni skaner qiling!");
-        setLoading(false);
-        return;
-      }
-
-      // 4. Navbat olish (createAppointment)
-      console.log('📋 Navbat olinmoqda...');
-      const appointmentResult = await createAppointment(
-        doctorId,
-        registerResult.access_token
-      );
-      console.log('📋 Navbat olish javobi:', appointmentResult);
-
-      if (!appointmentResult) {
+      // Navbat olish
+      const appt = await createAppointment(doctorId, res.access_token);
+      if (appt) {
+        localStorage.setItem("myAppointment", JSON.stringify({
+          id: appt.appointment_id || appt.id || appt.queue,
+          doctor_id: doctorId,
+          patient_name: name.trim(),
+          phone: phone,
+          queue: appt.queue,
+        }));
+        navigate("/client");
+      } else {
         setError("Navbat olishda xatolik");
-        setLoading(false);
-        return;
       }
-
-      // 5. Appointment ma'lumotlarini localStorage ga saqlash
-      const appointmentData = {
-        id: appointmentResult.id || appointmentResult.appointment_id,
-        doctor_id: doctorId,
-        patient_name: name,
-        phone: phone,
-        queue: appointmentResult.queue || appointmentResult.queue_number || 0,
-      };
-      localStorage.setItem("myAppointment", JSON.stringify(appointmentData));
-      console.log('✅ Saqlangan appointment:', appointmentData);
-
-      // 6. Client sahifasiga o'tish
-      navigate("/client");
-
     } catch (err) {
-      console.error('❌ Xatolik:', err);
       setError("Xatolik yuz berdi");
     }
     setLoading(false);
@@ -120,11 +107,10 @@ const Register = () => {
         </div>
       )}
 
-      {step === 1 ? (
-        // 1-qadam: Ma'lumotlar
+      {step === 1 && (
         <>
           <div style={{ marginBottom: "16px" }}>
-            <label style={{ display: "block", marginBottom: "6px", fontWeight: "500" }}>Ism Familiya</label>
+            <label style={{ display: "block", marginBottom: "6px", fontWeight: "500" }}>Ism familiya</label>
             <input
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -146,7 +132,7 @@ const Register = () => {
                 onChange={(e) => setPhone(e.target.value.replace(/\D/g, "").slice(0, 9))}
                 placeholder=""
                 inputMode="numeric"
-                style={{ ...inputStyle, paddingLeft: "58px" }}
+                style={{ ...inputStyle, paddingLeft: "58px", lineHeight: "normal" }}
               />
             </div>
           </div>
@@ -157,7 +143,8 @@ const Register = () => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Parolingiz"
+              placeholder="Kamida 6 ta belgi"
+              autoComplete="new-password"
               style={inputStyle}
             />
           </div>
@@ -167,22 +154,35 @@ const Register = () => {
             disabled={loading}
             style={btnStyle}
           >
-            {loading ? "Yuborilmoqda..." : "Kod yuborish"}
+            {loading ? "Yuklanmoqda..." : "Kod olish"}
           </button>
+
+          <p style={{ textAlign: "center", marginTop: "16px", color: "#64748b" }}>
+            Hisobingiz bormi?{" "}
+            <span
+              onClick={() => navigate("/login")}
+              style={{ color: "#16a34a", cursor: "pointer", fontWeight: "600" }}
+            >
+              Kirish
+            </span>
+          </p>
         </>
-      ) : (
-        // 2-qadam: Kod tasdiqlash
+      )}
+
+      {step === 2 && (
         <>
-          <div style={{ marginBottom: "16px" }}>
-            <label style={{ display: "block", marginBottom: "6px", fontWeight: "500" }}>
-              Telefonga yuborilgan kod
-            </label>
+          <p style={{ color: "#64748b", marginBottom: "16px", textAlign: "center" }}>
+            +998{phone} raqamiga SMS kod yuborildi
+          </p>
+
+          <div style={{ marginBottom: "24px" }}>
+            <label style={{ display: "block", marginBottom: "6px", fontWeight: "500" }}>Tasdiqlash kodi</label>
             <input
               value={code}
-              onChange={(e) => setCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
-              placeholder="6 xonalik kod"
+              onChange={(e) => setCode(e.target.value)}
+              placeholder="SMS kodini kiriting"
               inputMode="numeric"
-              style={inputStyle}
+              style={{ ...inputStyle, textAlign: "center", fontSize: "20px", letterSpacing: "4px" }}
             />
           </div>
 
@@ -191,19 +191,15 @@ const Register = () => {
             disabled={loading}
             style={btnStyle}
           >
-            {loading ? "Ro'yxatdan o'tilmoqda..." : "Tasdiqlash va navbat olish"}
+            {loading ? "Yuklanmoqda..." : "Tasdiqlash va navbat olish"}
           </button>
 
-          <button
+          <p
             onClick={() => setStep(1)}
-            style={{
-              ...btnStyle,
-              background: "#64748b",
-              marginTop: "10px"
-            }}
+            style={{ textAlign: "center", marginTop: "16px", color: "#64748b", cursor: "pointer" }}
           >
             ← Ortga
-          </button>
+          </p>
         </>
       )}
     </div>
@@ -220,6 +216,8 @@ const inputStyle = {
   boxSizing: "border-box",
   color: "#0f172a",
   background: "#fff",
+  WebkitBoxShadow: "0 0 0 1000px #fff inset",
+  WebkitTextFillColor: "#0f172a",
 };
 
 const btnStyle = {
