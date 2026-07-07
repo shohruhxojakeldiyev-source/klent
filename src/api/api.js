@@ -81,7 +81,7 @@ export const login = async (phone, password) => {
     const res = await fetch(`${API}/user/login`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ phone, password }),
+      body: JSON.stringify({ phone:phone, password:password }),
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.detail || "Kirishda xatolik");

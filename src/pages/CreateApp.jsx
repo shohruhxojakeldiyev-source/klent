@@ -1,18 +1,13 @@
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 
 const CreateApp = () => {
 
     let params = useParams()
 
-
-    console.log(params.id);
+    localStorage.setItem("doctorID",params.id)
     
-
   return (
     <div>
-        <h1>
-            {params.id}
-        </h1>
     </div>
   )
 }

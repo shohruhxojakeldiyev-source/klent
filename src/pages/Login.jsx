@@ -10,7 +10,7 @@ const Login = () => {
   const [error, setError] = useState("");
 
   const handleLogin = async () => {
-    
+
     setError("");
     if (!phone.trim() || phone.length !== 9) return setError("9 ta raqam kiriting");
     if (!password) return setError("Parolni kiriting");
@@ -30,12 +30,12 @@ const Login = () => {
 
       // Mavjud navbatni olish
       const doctorId = localStorage.getItem("doctor_id");
-       
-      const appts = await getAppointments(doctorId);
-const list = Array.isArray(appts) ? appts : [];
 
-console.log("Navbatlar:", list);
-console.log("Mening phone:", phone);
+      const appts = await getAppointments(doctorId);
+      const list = Array.isArray(appts) ? appts : [];
+
+      console.log("Navbatlar:", list);
+      console.log("Mening phone:", phone);
 
 
       if (doctorId) {
