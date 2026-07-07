@@ -2,16 +2,16 @@ import { useParams } from 'react-router-dom'
 
 const CreateApp = () => {
 
-    let id = useParams()
+    let params = useParams()
 
 
-    console.log(id);
+    console.log(params.id);
     
 
   return (
     <div>
         <h1>
-            {id}
+            {params.id}
         </h1>
     </div>
   )
