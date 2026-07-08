@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { login } from "../api/api";
+import { login, getAppointments, createAppointment } from "../api/api";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -10,7 +10,6 @@ const Login = () => {
   const [error, setError] = useState("");
 
   const handleLogin = async () => {
-
     setError("");
     if (!phone.trim() || phone.length !== 9) return setError("9 ta raqam kiriting");
     if (!password) return setError("Parolni kiriting");
@@ -24,42 +23,46 @@ const Login = () => {
         return;
       }
 
-
       localStorage.setItem("access_token", res.access_token);
       localStorage.setItem("user_name", res.name || "");
 
-      // Mavjud navbatni olish
       const doctorId = localStorage.getItem("doctor_id");
-
-      const appts = await getAppointments(doctorId);
-      const list = Array.isArray(appts) ? appts : [];
-
-      console.log("Navbatlar:", list);
-      console.log("Mening phone:", phone);
-
+      let myAppt = null;
 
       if (doctorId) {
-        const { getAppointments } = await import("../api/api");
         const appts = await getAppointments(doctorId);
         const list = Array.isArray(appts) ? appts : [];
-        // Foydalanuvchi nomi bo'yicha topamiz
-        const myAppt = list.find((a) =>
-          String(a.phone) === String(phone) ||
-          String(a.user_id) === String(res.user_id)
+        myAppt = list.find(
+          (a) =>
+            String(a.phone) === String(phone) ||
+            String(a.user_id) === String(res.user_id)
         );
-        if (myAppt) {
+      }
+
+      if (myAppt) {
+        // Mavjud navbat topildi
+        localStorage.setItem("myAppointment", JSON.stringify({
+          id: myAppt.id || myAppt.appointment_id,
+          doctor_id: doctorId,
+          patient_name: myAppt.patient_name || myAppt.name || res.name,
+          phone: myAppt.phone,
+          queue: myAppt.queue,
+        }));
+      } else {
+        // Navbat yo'q — avtomatik yangi navbat olish
+        const appt = await createAppointment(doctorId, res.access_token);
+        if (appt) {
           localStorage.setItem("myAppointment", JSON.stringify({
-            id: myAppt.id || myAppt.appointment_id,
+            id: appt.appointment_id || appt.id,
             doctor_id: doctorId,
-            patient_name: myAppt.patient_name || myAppt.name || res.name,
-            phone: myAppt.phone,
-            queue: myAppt.queue,
+            patient_name: res.name || "",
+            phone: phone,
+            queue: appt.queue,
           }));
         }
       }
 
       navigate("/client");
-
     } catch (err) {
       setError("Xatolik yuz berdi");
     }

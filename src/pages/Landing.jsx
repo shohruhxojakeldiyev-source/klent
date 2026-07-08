@@ -8,10 +8,11 @@ const Landing = () => {
   const [doctorName, setDoctorName] = useState("");
 
   useEffect(() => {
-    const doctorId = searchParams.get("doctor_id");
+    const fromUrl = searchParams.get("doctor_id");
+    if (fromUrl) localStorage.setItem("doctor_id", fromUrl);
+
+    const doctorId = fromUrl || localStorage.getItem("doctor_id");
     if (doctorId) {
-      localStorage.setItem("doctor_id", doctorId);
-      // Doctor ismini olish
       getDoctors().then((doctors) => {
         if (Array.isArray(doctors)) {
           const found = doctors.find((d) => String(d.id) === String(doctorId));

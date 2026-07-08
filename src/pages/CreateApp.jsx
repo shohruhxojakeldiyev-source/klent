@@ -1,15 +1,18 @@
+import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 const CreateApp = () => {
+  const { id } = useParams()
+  const navigate = useNavigate()
 
-    let params = useParams()
+  useEffect(() => {
+    if (id) {
+      localStorage.setItem("doctor_id", id)
+    }
+    navigate("/", { replace: true })
+  }, [])
 
-    localStorage.setItem("doctorID",params.id)
-    
-  return (
-    <div>
-    </div>
-  )
+  return <div />
 }
 
 export default CreateApp
