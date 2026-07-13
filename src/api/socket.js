@@ -3,7 +3,7 @@
 // Bu fayl faqat ULANISH ochadi va xabar kelganda chaqiruvchiga qaytaradi.
 // Ro'yxatni yangilash, modal ko'rsatish kabi ishlar Client.jsx da bo'ladi.
 
-const WS_BASE = "wss://doctorapi.sangilov.uz/ws/appointment";
+const WS_BASE = "wss://doctorsappointment-production-d0b9.up.railway.app/ws/appointment";
 
 /**
  * Appointment uchun WebSocket ochadi.

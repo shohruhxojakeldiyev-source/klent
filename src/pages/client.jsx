@@ -3,7 +3,7 @@ import "../styles/client.css";
 import { useNavigate } from "react-router-dom";
 
 import {
-  getAppointments,
+  getMyAppointment,
   cancelAppointment,
   skipAppointment,
 } from "../api/api.js";
@@ -14,7 +14,6 @@ const Client = () => {
   const navigate = useNavigate();
 
   const [myAppointment, setMyAppointment] = useState(null);
-  const [appointments, setAppointments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [successMsg, setSuccessMsg] = useState("");
   const [alertMsg, setAlertMsg] = useState("");
@@ -37,52 +36,40 @@ const Client = () => {
     }
   }, []);
 
-  // Navbatlar ro'yxatini yuklash
-  const loadAppointments = async (doctorId, silent = false) => {
-    if (!doctorId) return [];
+  // Serverdan navbat ma'lumotini yangilash
+  const refreshAppointment = async (silent = false) => {
     if (!silent) setLoading(true);
-    const data = await getAppointments(doctorId);
-    const list = Array.isArray(data) ? data : [];
-    const normalized = list.map((a) => ({
-      id: a.id || a.appointment_id || null,
-      doctor_id: a.doctor_id || null,
-      patient_name: a.patient_name || a.name || "",
-      phone: a.phone || "",
-      queue: a.queue || null,
-      ...a,
-    }));
-    setAppointments(normalized);
-
-    // Navbat hali bormi tekshirish
-    setMyAppointment((prev) => {
-      if (!prev) return prev;
-      const stillExists = normalized.some((a) => String(a.id) === String(prev.id));
-      if (!stillExists) {
-        localStorage.removeItem("myAppointment");
-        return null;
-      }
-      return prev;
-    });
-
+    const data = await getMyAppointment();
+    if (data === null) {
+      // 404 — navbat yopilgan yoki yo'q
+      localStorage.removeItem("myAppointment");
+      setMyAppointment(null);
+    } else if (data !== undefined) {
+      // Muvaffaqiyatli javob
+      const updated = {
+        id: data.appointment_id || data.id,
+        doctor_id: data.doctor_id,
+        patient_name: data.patient_name || data.name || myAppointment?.patient_name || "",
+        phone: data.phone || myAppointment?.phone || "",
+        queue: data.queue,
+        status: data.status,
+      };
+      setMyAppointment(updated);
+      localStorage.setItem("myAppointment", JSON.stringify(updated));
+    }
     if (!silent) setLoading(false);
-    return normalized;
   };
 
-  // Navbat yuklangandan keyin ro'yxatni yuklash
+  // Dastlabki yuklash
   useEffect(() => {
-    if (myAppointment?.doctor_id) {
-      loadAppointments(myAppointment.doctor_id);
-    }
-  }, [myAppointment?.doctor_id]);
+    if (myAppointment) refreshAppointment();
+  }, []);
 
   // 7 soniyada bir yangilash
   useEffect(() => {
-    if (!myAppointment?.doctor_id) return;
-    const interval = setInterval(() => {
-      loadAppointments(myAppointment.doctor_id, true);
-    }, 7000);
+    const interval = setInterval(() => refreshAppointment(true), 7000);
     return () => clearInterval(interval);
-  }, [myAppointment?.doctor_id]);
+  }, []);
 
   // WebSocket
   useEffect(() => {
@@ -96,7 +83,7 @@ const Client = () => {
       if (msg.queue != null) {
         setMyAppointment((prev) => prev ? { ...prev, queue: msg.queue } : prev);
       }
-      if (myAppointment?.doctor_id) loadAppointments(myAppointment.doctor_id, true);
+      refreshAppointment(true);
 
       if (msg.type === "your_turn") {
         setSuccessMsg(`🔔 ${msg.title || "Navbatingiz keldi!"}\n${msg.body || ""}`);
@@ -106,13 +93,6 @@ const Client = () => {
     });
     return cleanup;
   }, [myAppointment?.id]);
-
-  // Pozitsiya
-  const myPosition = () => {
-    if (!myAppointment) return null;
-    const idx = appointments.findIndex((x) => String(x.id) === String(myAppointment.id));
-    return idx === -1 ? null : idx + 1;
-  };
 
   // Bekor qilish
   const cancelMyTicket = async () => {
@@ -132,13 +112,7 @@ const Client = () => {
   // Surish
   const skipMyTicket = () => {
     if (!myAppointment) return;
-    const currentPos = myPosition();
-    const maxSkip = currentPos ? appointments.length - currentPos : 0;
-    if (maxSkip < 1) {
-      setAlertMsg("Siz allaqachon oxirgi navbatdasiz");
-      return;
-    }
-    setMaxSkipValue(maxSkip);
+    setMaxSkipValue(10); // foydalanuvchi o'zi kiritadi, backend chegaralaydi
     setSkipCount("");
     setShowSkipModal(true);
   };
@@ -153,7 +127,7 @@ const Client = () => {
       const res = await skipAppointment(myAppointment.id, safeCount);
       if (res) {
         setSuccessMsg(`Navbat ${safeCount} taga surildi`);
-        if (myAppointment?.doctor_id) await loadAppointments(myAppointment.doctor_id);
+        await refreshAppointment();
       } else {
         setAlertMsg("Surishda xatolik");
       }
@@ -227,7 +201,7 @@ const Client = () => {
       {/* Navbat kartasi */}
       <div className="myCard">
         <p className="myLabel">Sizning navbatingiz</p>
-        <div className="myNumber">{myAppointment.queue ?? myPosition() ?? "-"}</div>
+        <div className="myNumber">{myAppointment.queue ?? "-"}</div>
         <p className="myName">{myAppointment.patient_name || ""}</p>
 
         <div className="myActions">

@@ -122,6 +122,22 @@ export const getAppointments = async (doctorId) => {
   }
 };
 
+export const getMyAppointment = async () => {
+  try {
+    const token = localStorage.getItem("access_token") || "";
+    const res = await fetch(`${API}/user/my_appointment`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.status === 404) return null;
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || "Xatolik");
+    return data;
+  } catch (err) {
+    console.error("getMyAppointment xatolik:", err);
+    return undefined; // null = topilmadi, undefined = tarmoq xatosi
+  }
+};
+
 // ─── Navbat ───────────────────────────────────────────────────────────────────
 
 export const createAppointment = async (doctorId, token, name, phone) => {
