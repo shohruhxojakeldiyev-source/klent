@@ -14,6 +14,13 @@ const Register = () => {
     }
   }, []);
 
+  const doctorId = localStorage.getItem("doctor_id");
+
+  // doctor_id yo'q bo'lsa bosh sahifaga qaytarish
+  useEffect(() => {
+    if (!doctorId) navigate("/", { replace: true });
+  }, []);
+
   const [step, setStep] = useState(1); // 1: ma'lumot kiritish, 2: kodni tasdiqlash
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -50,8 +57,6 @@ const Register = () => {
 
     setLoading(true);
     try {
-      const doctorId = localStorage.getItem("doctor_id");
-
       // Register
       const res = await register(name.trim(), phone, password, code);
       if (!res || !res.access_token) {

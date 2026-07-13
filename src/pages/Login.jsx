@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { login, getAppointments, createAppointment } from "../api/api";
 
@@ -8,6 +8,12 @@ const Login = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const doctorId = localStorage.getItem("doctor_id");
+
+  useEffect(() => {
+    if (!doctorId) navigate("/", { replace: true });
+  }, []);
 
   const handleLogin = async () => {
     setError("");
@@ -26,7 +32,6 @@ const Login = () => {
       localStorage.setItem("access_token", res.access_token);
       localStorage.setItem("user_name", res.name || "");
 
-      const doctorId = localStorage.getItem("doctor_id");
       let myAppt = null;
 
       if (doctorId) {
