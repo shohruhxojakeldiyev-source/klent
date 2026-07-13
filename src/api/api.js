@@ -124,7 +124,7 @@ export const getAppointments = async (doctorId) => {
 
 // ─── Navbat ───────────────────────────────────────────────────────────────────
 
-export const createAppointment = async (doctorId, token) => {
+export const createAppointment = async (doctorId, token, name, phone) => {
   try {
     let fcmToken = getFCMToken();
     if (!fcmToken) {
@@ -140,6 +140,8 @@ export const createAppointment = async (doctorId, token) => {
         Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
+        name: name || "",
+        phone: phone || "",
         doctor_id: Number(doctorId),
         appointment_date: today,
         fcm_token: fcmToken || "",

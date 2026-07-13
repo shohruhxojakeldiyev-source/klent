@@ -65,7 +65,7 @@ const Register = () => {
       localStorage.setItem("user_name", res.name || name.trim());
 
       // Navbat olish
-      const appt = await createAppointment(doctorId, res.access_token);
+      const appt = await createAppointment(doctorId, res.access_token, name.trim(), phone);
       if (appt) {
         localStorage.setItem("myAppointment", JSON.stringify({
           id: appt.appointment_id || appt.id || appt.queue,

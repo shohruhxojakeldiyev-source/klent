@@ -50,7 +50,7 @@ const Login = () => {
         }));
       } else {
         // Navbat yo'q — avtomatik yangi navbat olish
-        const appt = await createAppointment(doctorId, res.access_token);
+        const appt = await createAppointment(doctorId, res.access_token, res.name || "", phone);
         if (appt) {
           localStorage.setItem("myAppointment", JSON.stringify({
             id: appt.appointment_id || appt.id,
