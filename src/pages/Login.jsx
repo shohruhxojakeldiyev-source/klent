@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { login, getAppointments, createAppointment } from "../api/api";
+import { login, getMyAppointment, createAppointment } from "../api/api";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -32,26 +32,17 @@ const Login = () => {
       localStorage.setItem("access_token", res.access_token);
       localStorage.setItem("user_name", res.name || "");
 
-      let myAppt = null;
+      // Faol navbat bormi tekshirish
+      const existing = await getMyAppointment();
 
-      if (doctorId) {
-        const appts = await getAppointments(doctorId);
-        const list = Array.isArray(appts) ? appts : [];
-        myAppt = list.find(
-          (a) =>
-            String(a.phone) === String(phone) ||
-            String(a.user_id) === String(res.user_id)
-        );
-      }
-
-      if (myAppt) {
+      if (existing) {
         // Mavjud navbat topildi
         localStorage.setItem("myAppointment", JSON.stringify({
-          id: myAppt.id || myAppt.appointment_id,
-          doctor_id: doctorId,
-          patient_name: myAppt.patient_name || myAppt.name || res.name,
-          phone: myAppt.phone,
-          queue: myAppt.queue,
+          id: existing.appointment_id || existing.id,
+          doctor_id: existing.doctor_id,
+          patient_name: res.name || "",
+          phone: phone,
+          queue: existing.queue,
         }));
       } else {
         // Navbat yo'q — avtomatik yangi navbat olish
