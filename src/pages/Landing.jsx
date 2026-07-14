@@ -10,6 +10,7 @@ const Landing = () => {
   const [hasDoctorId, setHasDoctorId] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [scanError, setScanError] = useState("");
+  const [scanDebug, setScanDebug] = useState("");
   const html5QrcodeRef = useRef(null);
 
   useEffect(() => {
@@ -34,14 +35,23 @@ const Landing = () => {
 
   const handleQRResult = (text) => {
     setScanError("");
+    setScanDebug("O'qildi: " + text);
     let doctorId = null;
 
     try {
       const url = new URL(text);
       const match = url.pathname.match(/\/createApp\/(\d+)/);
-      if (match) doctorId = match[1];
+      if (match) {
+        doctorId = match[1];
+      } else {
+        setScanError("URL topildi lekin createApp/:id formati yo'q. Path: " + url.pathname);
+      }
     } catch {
-      if (/^\d+$/.test(text.trim())) doctorId = text.trim();
+      if (/^\d+$/.test(text.trim())) {
+        doctorId = text.trim();
+      } else {
+        setScanError("URL ham emas, son ham emas: " + text);
+      }
     }
 
     if (doctorId) {
@@ -50,8 +60,6 @@ const Landing = () => {
       setShowScanner(false);
       setHasDoctorId(true);
       loadDoctorName(doctorId);
-    } else {
-      setScanError("Noto'g'ri QR kod. Klinika QR kodini skaner qiling.");
     }
   };
 
@@ -109,10 +117,20 @@ const Landing = () => {
 
           <div id="qr-scanner-region" style={{ width: "100%" }} />
 
+          {scanDebug && (
+            <div style={{
+              padding: "10px 16px", background: "#f0fdf4",
+              color: "#166534", fontSize: "12px",
+              wordBreak: "break-all", borderTop: "1px solid #dcfce7"
+            }}>
+              <b>O'qilgan matn:</b> {scanDebug}
+            </div>
+          )}
           {scanError && (
             <div style={{
               padding: "12px 16px", background: "#fee2e2",
-              color: "#dc2626", fontSize: "14px", textAlign: "center"
+              color: "#dc2626", fontSize: "13px",
+              wordBreak: "break-all", textAlign: "center"
             }}>
               {scanError}
             </div>
