@@ -6,6 +6,7 @@ const Landing = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [doctorName, setDoctorName] = useState("");
+  const [hasDoctorId, setHasDoctorId] = useState(false);
 
   useEffect(() => {
     const fromUrl = searchParams.get("doctor_id");
@@ -13,6 +14,7 @@ const Landing = () => {
 
     const doctorId = fromUrl || localStorage.getItem("doctor_id");
     if (doctorId) {
+      setHasDoctorId(true);
       getDoctors().then((doctors) => {
         if (Array.isArray(doctors)) {
           const found = doctors.find((d) => String(d.id) === String(doctorId));
@@ -21,6 +23,27 @@ const Landing = () => {
       });
     }
   }, []);
+
+  // doctor_id yo'q — QR kod so'rash
+  if (!hasDoctorId) {
+    return (
+      <div style={{
+        maxWidth: "400px",
+        margin: "0 auto",
+        background: "#fff",
+        borderRadius: "16px",
+        padding: "40px 24px",
+        boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+        textAlign: "center"
+      }}>
+        <div style={{ fontSize: "64px", marginBottom: "16px" }}>📷</div>
+        <h3 style={{ margin: "0 0 12px", color: "#0f172a" }}>QR kodni skaner qiling</h3>
+        <p style={{ color: "#64748b", fontSize: "14px", lineHeight: "1.6" }}>
+          Navbat olish uchun klinikadagi QR kodni kamerangiz orqali skaner qiling.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div style={{
