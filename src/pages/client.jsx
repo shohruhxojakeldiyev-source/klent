@@ -98,14 +98,9 @@ const Client = () => {
   const cancelMyTicket = async () => {
     if (!myAppointment) return;
     setLoading(true);
-    try {
-      await cancelAppointment(myAppointment.id);
-      localStorage.clear();
-      navigate("/", { replace: true });
-    } catch {
-      setAlertMsg("Bekor qilishda xatolik");
-      setLoading(false);
-    }
+    await cancelAppointment(myAppointment.id).catch(() => {});
+    localStorage.clear();
+    navigate("/", { replace: true });
   };
 
   // Surish
