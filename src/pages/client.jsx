@@ -100,13 +100,12 @@ const Client = () => {
     setLoading(true);
     try {
       await cancelAppointment(myAppointment.id);
-      setMyAppointment(null);
-      localStorage.removeItem("myAppointment");
-      navigate("/");
+      localStorage.clear();
+      navigate("/", { replace: true });
     } catch {
       setAlertMsg("Bekor qilishda xatolik");
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   // Surish
